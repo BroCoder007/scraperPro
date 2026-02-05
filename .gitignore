@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.vscode/
+scraped_data/
+*.log
+.env
+debug_screenshot.png
