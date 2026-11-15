@@ -75,7 +75,7 @@ Open [http://127.0.0.1:8000](http://127.0.0.1:8000) in your browser. Leave the t
 4. Select **Start crawl**. The activity panel shows recent requests; the table shows page status and passive observations.
 5. Use **Stop** to request a stop. Active requests finish first. When the crawl is no longer running, select **Download SQLite database** to save its database.
 
-The dashboard shows the first 100 recorded pages. Use the API or SQLite database to inspect additional pages, all recorded links and previous runs. One crawl can run at a time.
+The dashboard paginates recorded pages in batches of 25. Use the API or SQLite database to inspect additional pages, all recorded links and previous runs. One crawl can run at a time.
 
 ## Crawl scope and status
 
@@ -173,7 +173,7 @@ ScraperPro does not perform exploit attempts, authentication tests, port scans o
 - **Port 8000 is in use:** stop the other process or change the port in `run.py`, then restart the app and use the matching address.
 - **A run fails immediately on `robots.txt`:** inspect recent activity and confirm that the file is reachable and the site permits crawling. The crawler stops when it cannot verify the rules.
 - **A page is missing or marked as an error:** check its origin, `robots.txt`, HTTP response, page limit and any authentication requirements. External URLs are recorded but not followed.
-- **Results look incomplete:** check for `limited`, `stopped`, `failed` or `interrupted` status, page errors and `truncated` flags. The dashboard displays only the first 100 pages.
+- **Results look incomplete:** check for `limited`, `stopped`, `failed` or `interrupted` status, page errors and `truncated` flags. The dashboard displays 25 pages at a time; use its pagination controls for more.
 - **Database download returns 409:** wait for the active crawl to stop before downloading.
 
 ## Run the tests
@@ -191,3 +191,14 @@ From the project directory, after installing the requirements and Playwright Chr
 ```
 
 The tests use a temporary local website and database. They cover link deduplication and scope, `robots.txt`, stored results, passive findings, the page cap and optional browser rendering. Browser rendering tests require a working Chromium installation.
+
+## Redesigned workspace
+
+The dashboard uses a soft editorial layout and motion inspired by the supplied Traced reference. It runs on the same local server; no additional frontend installation is required.
+
+- **Pages** displays 25 records at a time with previous/next navigation. The text filter applies to the loaded page.
+- **Observations** shows findings and a severity filter for those same loaded records.
+- **Link map** lists 100 edges per page and previews up to 40 of them in a diagram. The database remains the complete record.
+- **Activity** shows the latest crawler messages.
+
+Use **Pause motion** in the floating navigation to stop decorative movement. Device reduced-motion preferences are also respected. See [frontend and animation notes](docs/FRONTEND.md) for the reference study, implementation details and verification workflow.

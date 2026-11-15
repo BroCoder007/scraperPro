@@ -1,1 +1,709 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ScraperPro | Website Map</title><link rel="stylesheet" href="/static/style.css"><style>.options{display:flex;flex-wrap:wrap;gap:16px;margin:16px 0}.options label{display:flex;gap:8px;align-items:center}.options input[type=number]{width:90px}.logs-content{white-space:pre-wrap}.results-panel{grid-column:1/-1}.table-container{overflow:auto}td{vertical-align:top;overflow-wrap:anywhere}small{color:#aaa}a{color:#9bc5ff}</style></head><body><div class="app-container"><header><div class="logo">ScraperPro <span class="badge">SITE MAP</span></div><div class="status-indicator"><span id="status-dot" class="dot"></span><span id="status-text">Ready</span></div></header><main><section class="control-panel"><h1>Map a website</h1><p>Crawl same-origin links, save the link graph, and review passive security observations.</p><div class="input-group"><label for="seed-url">Starting URL</label><input type="url" id="seed-url" placeholder="https://example.com/" required></div><div class="options"><label>Page limit <input type="number" id="max-pages" min="1" max="100000" value="10000"></label><label>Concurrency <input type="number" id="concurrency" min="1" max="16" value="4"></label><label><input type="checkbox" id="render"> Render JavaScript pages (optional GPU)</label></div><small>Only crawl sites you are authorized to assess. Results are passive indicators, not proof of vulnerabilities. robots.txt is respected.</small><div class="actions"><button id="start-btn" onclick="startCrawl()">Start crawl</button><button id="stop-btn" onclick="stopCrawl()" disabled>Stop</button><a href="/database">Download SQLite database</a></div></section><div class="dashboard-grid"><section class="logs-panel glass-panel"><h3>Recent activity</h3><div id="logs-container" class="logs-content"></div></section><section class="results-panel glass-panel"><h3>Pages and findings</h3><p id="result-count"></p><small>Showing first 100 pages. The database includes all recorded pages, links and findings.</small><div class="table-container"><table id="results-table"><thead><tr><th>Page</th><th>Status</th><th>Security observations</th><th>Depth</th></tr></thead><tbody></tbody></table></div></section></div></main></div><script src="/static/script.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#e8ebdf" />
+    <meta
+      name="description"
+      content="Map the links behind a website. ScraperPro brings pages, relationships and passive security observations into one clear view."
+    />
+    <title>ScraperPro — Follow the links. See the picture.</title>
+    <link rel="icon" href="/static/assets/mark.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/static/style.css" />
+    <script src="/static/motion.js" defer></script>
+    <script src="/static/script.js" defer></script>
+  </head>
+  <body>
+    <a class="skip" href="#workspace">Skip to crawl workspace</a>
+    <div class="grain" aria-hidden="true"></div>
+    <header class="floating-header" id="header">
+      <a href="#home" class="brand" aria-label="ScraperPro home"
+        ><svg aria-hidden="true" viewBox="0 0 34 34">
+          <path d="M4 20v-6m5 13V7m5 17V10m5 19V5m5 20V9m5 13V12" />
+          <circle cx="4" cy="17" r="1.7" />
+          <circle cx="14" cy="13" r="1.7" />
+          <circle cx="24" cy="21" r="1.7" /></svg
+        ><span>ScraperPro<span class="brand-dot">.</span></span></a
+      >
+      <nav aria-label="Main navigation">
+        <a href="#workspace">Map</a><a href="#guide">How it works</a
+        ><a href="#results">Results</a>
+      </nav>
+      <button
+        type="button"
+        id="motion-toggle"
+        class="motion-button"
+        aria-pressed="false"
+        hidden
+      >
+        Pause motion
+      </button>
+    </header>
+    <main>
+      <section class="hero" id="home" aria-labelledby="hero-title">
+        <div class="hero-field" aria-hidden="true">
+          <div class="field-light light-one"></div>
+          <div class="field-light light-two"></div>
+          <div class="field-light light-three"></div>
+        </div>
+        <div class="hero-graph" aria-hidden="true">
+          <svg class="graph-art" viewBox="0 0 700 760">
+            <defs>
+              <linearGradient id="stroke" x1="0" y1="0" x2="1" y2="1">
+                <stop stop-color="#fbfff2" />
+                <stop offset="1" stop-color="#d4e3a5" />
+              </linearGradient>
+              <radialGradient id="node">
+                <stop stop-color="#f9ffe7" />
+                <stop offset="1" stop-color="#b5c38b" />
+              </radialGradient>
+            </defs>
+            <g class="art-orbits">
+              <ellipse cx="350" cy="350" rx="255" ry="190" />
+              <ellipse
+                cx="350"
+                cy="350"
+                rx="255"
+                ry="190"
+                transform="rotate(60 350 350)"
+              />
+              <ellipse
+                cx="350"
+                cy="350"
+                rx="255"
+                ry="190"
+                transform="rotate(120 350 350)"
+              />
+            </g>
+            <g class="art-edges">
+              <path
+                d="M350 350Q175 160 145 190M350 350Q390 130 535 160M350 350Q635 300 570 400M350 350Q410 500 470 580M350 350Q200 350 170 510M145 190Q350 10 535 160M535 160Q690 240 570 400M570 400Q630 570 470 580M170 510Q285 660 470 580M145 190Q30 410 170 510"
+              />
+            </g>
+            <g class="art-nodes">
+              <circle cx="350" cy="350" r="58" />
+              <circle cx="145" cy="190" r="29" />
+              <circle cx="535" cy="160" r="39" />
+              <circle cx="570" cy="400" r="25" />
+              <circle cx="470" cy="580" r="37" />
+              <circle cx="170" cy="510" r="24" />
+            </g>
+            <g class="art-text">
+              <text x="350" y="354">/</text>
+              <text x="145" y="194">01</text>
+              <text x="535" y="164">02</text>
+              <text x="570" y="404">03</text>
+              <text x="470" y="584">04</text>
+              <text x="170" y="514">05</text>
+            </g>
+            <g class="art-particles">
+              <circle r="4">
+                <animateMotion
+                  dur="7s"
+                  repeatCount="indefinite"
+                  path="M350 350Q390 130 535 160"
+                />
+              </circle>
+              <circle r="4">
+                <animateMotion
+                  dur="9s"
+                  repeatCount="indefinite"
+                  path="M350 350Q410 500 470 580"
+                />
+              </circle>
+              <circle r="3">
+                <animateMotion
+                  dur="8s"
+                  repeatCount="indefinite"
+                  path="M145 190Q30 410 170 510"
+                />
+              </circle>
+            </g></svg
+          ><span class="graph-caption">LINK RELATIONSHIPS / ILLUSTRATION</span>
+          <div class="glass-label graph-label">
+            <span class="small-dot"></span
+            ><span>Connections, made visible</span>
+          </div>
+        </div>
+        <div class="hero-trace" aria-hidden="true">
+          <div class="trace-dashes"></div>
+          <span class="trace-label"
+            ><i></i><span data-cycle>FOLLOW THE LINKS</span></span
+          >
+        </div>
+        <div class="hero-copy">
+          <p class="kicker hero-reveal">A DIFFERENT VIEW OF THE WEB</p>
+          <h1 id="hero-title" class="hero-reveal">
+            Every link<br />leaves a trace.<br /><em>See where it leads.</em>
+          </h1>
+          <a class="button button-light hero-reveal" href="#workspace"
+            >Map a website <span aria-hidden="true">↗</span></a
+          >
+        </div>
+        <div class="hero-facts">
+          <span>Same-origin<br />page discovery</span
+          ><span>Passive security<br />observations</span
+          ><span>Your map.<br />Your database.</span>
+        </div>
+        <a href="#workspace" class="hero-dock"
+          ><span class="dock-icon" aria-hidden="true">↗</span
+          ><span
+            >Begin with a single URL<small
+              >Open your crawl workspace</small
+            ></span
+          ><span class="circle-arrow" aria-hidden="true">→</span></a
+        >
+      </section>
+      <section class="intro section-shell" aria-labelledby="intro-title">
+        <span class="eyebrow">THE BIGGER PICTURE</span>
+        <div>
+          <h2 class="reveal" id="intro-title">
+            A page is a starting point.<br /><span
+              >The links tell the story.</span
+            >
+          </h2>
+          <p class="reveal">
+            Follow the connections behind a website, record what each page
+            returns, and bring the details together. One place for the map, the
+            observations and the data behind them.
+          </p>
+        </div>
+      </section>
+      <section
+        class="workspace section-shell"
+        id="workspace"
+        aria-labelledby="workspace-title"
+      >
+        <div class="section-heading reveal">
+          <div>
+            <span class="eyebrow">YOUR WORKSPACE</span>
+            <h2 id="workspace-title">
+              Start small.<br />See the whole connection.
+            </h2>
+          </div>
+          <div class="run-status" role="status">
+            <span id="status-dot" class="small-dot"></span
+            ><span id="status-text">Connecting…</span>
+          </div>
+        </div>
+        <div id="app-message" class="app-message" role="status" hidden></div>
+        <div class="workspace-grid">
+          <form id="crawl-form" class="setup-card">
+            <div class="card-heading">
+              <span class="step-badge">01 / SET THE SCOPE</span
+              ><span class="mini-mark" aria-hidden="true">⌁</span>
+            </div>
+            <label for="seed-url">Where should we begin?</label>
+            <div class="url-field">
+              <span aria-hidden="true">↗</span
+              ><input
+                type="url"
+                id="seed-url"
+                placeholder="https://your-website.com/"
+                required
+                autocomplete="url"
+                aria-describedby="scope-note"
+              />
+            </div>
+            <p class="field-note" id="scope-note">
+              Linked pages on the same origin are followed. External links are
+              recorded.
+            </p>
+            <div class="settings-grid">
+              <label for="max-pages"
+                >Page limit<input
+                  type="number"
+                  id="max-pages"
+                  min="1"
+                  max="100000"
+                  value="10000"
+                  required /></label
+              ><label for="concurrency"
+                >Concurrent requests<input
+                  type="number"
+                  id="concurrency"
+                  min="1"
+                  max="16"
+                  value="4"
+                  required /></label
+              ><label for="delay"
+                >Request delay (seconds)<input
+                  type="number"
+                  id="delay"
+                  min="0.05"
+                  max="30"
+                  step="0.05"
+                  value="0.25"
+                  required
+              /></label>
+            </div>
+            <details class="advanced">
+              <summary>
+                Browser rendering <span aria-hidden="true">+</span>
+              </summary>
+              <label class="checkbox-label"
+                ><input type="checkbox" id="render" /><span
+                  >Render JavaScript pages</span
+                ></label
+              >
+              <p class="field-note">
+                Requires Playwright Chromium. Uses more resources than HTTP
+                mode; GPU use depends on the device.
+              </p>
+            </details>
+            <p class="permission-note">
+              Use a site you’re authorized to assess. Robots.txt rules are
+              respected.
+            </p>
+            <div class="form-actions">
+              <button id="start-btn" class="button button-dark" type="submit">
+                Start crawl <span aria-hidden="true">↗</span></button
+              ><button
+                id="stop-btn"
+                type="button"
+                class="button button-outline"
+                disabled
+              >
+                Stop crawl
+              </button>
+            </div>
+          </form>
+          <aside class="summary-card" aria-labelledby="summary-title">
+            <div class="card-heading">
+              <span class="step-badge">02 / FOLLOW THE TRACE</span
+              ><span class="live-caption" id="live-caption"
+                >WAITING FOR A CRAWL</span
+              >
+            </div>
+            <h3 id="summary-title">The picture so far.</h3>
+            <p id="run-seed" class="run-seed">
+              Your starting URL will appear here.
+            </p>
+            <div class="stats-grid">
+              <div>
+                <span id="visited-count">—</span>
+                <p>Pages visited</p>
+              </div>
+              <div>
+                <span id="queued-count">—</span>
+                <p>In the queue</p>
+              </div>
+              <div>
+                <span id="error-count">—</span>
+                <p>Page errors</p>
+              </div>
+            </div>
+            <div class="budget">
+              <div>
+                <label for="budget-progress">Page budget used</label
+                ><span id="budget-label">Waiting</span>
+              </div>
+              <progress id="budget-progress" max="100" value="0">0%</progress>
+              <p class="field-note">
+                This is the share of your page limit recorded so far, not a
+                measure of site coverage.
+              </p>
+            </div>
+            <div class="summary-bottom">
+              <span class="status-caption" id="run-description"
+                >Set your scope, then start a crawl.</span
+              ><a
+                id="download-db"
+                class="download-link"
+                href="/database"
+                download
+                aria-disabled="true"
+                >Save SQLite database <span aria-hidden="true">↓</span></a
+              ><small>The download includes all stored runs.</small>
+            </div>
+          </aside>
+        </div>
+      </section>
+      <section
+        class="results section-shell"
+        id="results"
+        aria-labelledby="results-title"
+      >
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">THE DETAILS BEHIND THE MAP</span>
+            <h2 id="results-title">Read the traces.</h2>
+          </div>
+          <span id="run-id" class="result-run">NO CRAWL YET</span>
+        </div>
+        <div class="result-tabs" role="tablist" aria-label="Crawl results">
+          <button
+            role="tab"
+            id="tab-pages"
+            aria-controls="panel-pages"
+            aria-selected="true"
+            data-tab="pages"
+            type="button"
+          >
+            Pages</button
+          ><button
+            role="tab"
+            id="tab-findings"
+            aria-controls="panel-findings"
+            aria-selected="false"
+            data-tab="findings"
+            tabindex="-1"
+            type="button"
+          >
+            Observations</button
+          ><button
+            role="tab"
+            id="tab-links"
+            aria-controls="panel-links"
+            aria-selected="false"
+            data-tab="links"
+            tabindex="-1"
+            type="button"
+          >
+            Link map</button
+          ><button
+            role="tab"
+            id="tab-activity"
+            aria-controls="panel-activity"
+            aria-selected="false"
+            data-tab="activity"
+            tabindex="-1"
+            type="button"
+          >
+            Activity
+          </button>
+        </div>
+        <div id="results-loading" class="results-loading" role="status" hidden>
+          Updating the view…
+        </div>
+        <div
+          class="result-panel"
+          id="panel-pages"
+          role="tabpanel"
+          aria-labelledby="tab-pages"
+          tabindex="0"
+        >
+          <div class="result-toolbar">
+            <p id="result-count">Your pages will appear here.</p>
+            <label class="search-label"
+              ><span class="sr-only">Filter the loaded page of results</span
+              ><input
+                type="search"
+                id="page-search"
+                placeholder="Filter this page…"
+            /></label>
+          </div>
+          <div class="table-container">
+            <table id="results-table">
+              <caption class="sr-only">
+                Recorded pages with HTTP status, crawl depth and observations
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Page</th>
+                  <th scope="col">Response</th>
+                  <th scope="col">Observations</th>
+                  <th scope="col">Depth</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="4" class="empty-state">
+                    <span class="empty-icon" aria-hidden="true">⌁</span>
+                    <h3>A map waiting to happen.</h3>
+                    <p>Start a crawl to see the pages and their connections.</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div
+          class="result-panel"
+          id="panel-findings"
+          role="tabpanel"
+          aria-labelledby="tab-findings"
+          tabindex="0"
+          hidden
+        >
+          <div class="result-toolbar">
+            <p>Observations on the loaded page of results.</p>
+            <label class="severity-label"
+              >Severity<select id="severity">
+                <option value="all">All levels</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+                <option value="info">Info</option>
+              </select></label
+            >
+          </div>
+          <div id="findings-list" class="findings-list">
+            <p class="empty-state">
+              Observations appear after pages are fetched.
+            </p>
+          </div>
+          <p class="observation-note">
+            These are passive observations for manual review. An empty list does
+            not establish that a page is secure.
+          </p>
+        </div>
+        <div
+          class="result-panel"
+          id="panel-links"
+          role="tabpanel"
+          aria-labelledby="tab-links"
+          tabindex="0"
+          hidden
+        >
+          <div class="result-toolbar">
+            <p id="link-caption">Recorded relationships will appear here.</p>
+            <span class="graph-legend"
+              ><i></i> Same origin <i class="external"></i> External</span
+            >
+          </div>
+          <div id="link-graph" class="link-graph">
+            <p class="empty-state">
+              Every recorded link adds a connection to your map.
+            </p>
+          </div>
+          <div class="table-container">
+            <table class="links-table">
+              <caption class="sr-only">
+                Recorded source and target URLs
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">From</th>
+                  <th scope="col">To</th>
+                  <th scope="col">Scope</th>
+                </tr>
+              </thead>
+              <tbody id="links-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <div
+          class="result-panel"
+          id="panel-activity"
+          role="tabpanel"
+          aria-labelledby="tab-activity"
+          tabindex="0"
+          hidden
+        >
+          <div class="result-toolbar">
+            <p>Recent crawler activity</p>
+            <span>Latest 100 messages</span>
+          </div>
+          <div id="logs-container" class="logs-content">
+            <p class="empty-state">
+              The crawl’s activity will be recorded here.
+            </p>
+          </div>
+        </div>
+        <div class="pagination" id="pagination">
+          <p id="page-label">No records yet</p>
+          <div>
+            <button
+              id="previous-page"
+              type="button"
+              aria-label="Previous results page"
+              disabled
+            >
+              ←</button
+            ><button
+              id="next-page"
+              type="button"
+              aria-label="Next results page"
+              disabled
+            >
+              →
+            </button>
+          </div>
+        </div>
+        <p class="results-note">
+          The workspace displays the latest run. Download the database or use
+          the
+          <a href="/docs" target="_blank" rel="noopener noreferrer">API</a> for
+          earlier runs and the complete dataset.
+        </p>
+      </section>
+      <section
+        class="guide section-shell"
+        id="guide"
+        aria-labelledby="guide-title"
+      >
+        <div class="section-heading reveal">
+          <span class="eyebrow">HOW IT WORKS</span>
+          <h2 id="guide-title">One URL.<br />A connected picture.</h2>
+          <a class="text-link" href="#workspace">Start your map ↗</a>
+        </div>
+        <div class="process-layout">
+          <div class="process-visual" aria-hidden="true">
+            <div class="process-card active" data-visual="0">
+              <span class="visual-kicker">THE STARTING POINT</span>
+              <div class="illustrated-url"><span>↗</span> your-website.com</div>
+              <div class="mini-network">
+                <i></i><i></i><i></i><i></i><i></i>
+              </div>
+              <span class="glass-label visual-label"
+                >01 <span>Follow the links</span></span
+              >
+            </div>
+            <div class="process-card" data-visual="1">
+              <span class="visual-kicker">THE RESPONSE</span>
+              <div class="observed-sheet">
+                <div>Response headers <span>↗</span></div>
+                <p>Content-Security-Policy</p>
+                <p>Referrer-Policy</p>
+                <p>X-Content-Type-Options</p>
+                <div class="sheet-scan"></div>
+              </div>
+              <span class="glass-label visual-label"
+                >02 <span>Observe the details</span></span
+              >
+            </div>
+            <div class="process-card" data-visual="2">
+              <span class="visual-kicker">YOUR DATA, CONNECTED</span>
+              <div class="database-art"><span>SQLite</span><i></i><i></i></div>
+              <span class="glass-label visual-label"
+                >03 <span>Keep the picture</span></span
+              >
+            </div>
+          </div>
+          <div class="process-steps">
+            <article class="process-step" data-step="0">
+              <div class="step-rail"><span>01</span><i></i></div>
+              <div>
+                <span class="eyebrow">DISCOVER</span>
+                <h3>Start with a page.<br />Follow what it connects to.</h3>
+                <p>
+                  Same-origin links are queued within your limits. External
+                  destinations are recorded, but not followed.
+                </p>
+              </div>
+            </article>
+            <article class="process-step" data-step="1">
+              <div class="step-rail"><span>02</span><i></i></div>
+              <div>
+                <span class="eyebrow">OBSERVE</span>
+                <h3>Look beyond<br />the visible page.</h3>
+                <p>
+                  Response details and passive security indicators help you
+                  decide what deserves a closer look.
+                </p>
+              </div>
+            </article>
+            <article class="process-step" data-step="2">
+              <div class="step-rail"><span>03</span><i></i></div>
+              <div>
+                <span class="eyebrow">UNDERSTAND</span>
+                <h3>Keep the links.<br />Take the data with you.</h3>
+                <p>
+                  Pages, edges and observations are stored in SQLite, ready to
+                  explore after the crawl finishes.
+                </p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+      <section class="explore section-shell" aria-labelledby="explore-title">
+        <div class="section-heading reveal">
+          <span class="eyebrow">A CLOSER LOOK</span>
+          <h2 id="explore-title">More than a list of URLs.</h2>
+        </div>
+        <div
+          class="carousel"
+          aria-roledescription="carousel"
+          aria-label="What ScraperPro records"
+        >
+          <div class="carousel-track">
+            <article class="learn-card" data-slide="0">
+              <div class="learn-art art-map" aria-hidden="true">
+                <span class="glass-label">A → B → C</span>
+                <div class="mini-network">
+                  <i></i><i></i><i></i><i></i><i></i>
+                </div>
+              </div>
+              <div>
+                <span class="eyebrow">THE CONNECTIONS</span>
+                <h3>A map, not just a snapshot.</h3>
+                <p>
+                  Keep the relationship between source and target URLs,
+                  including cycles and external links.
+                </p>
+              </div>
+            </article>
+            <article class="learn-card" data-slide="1">
+              <div class="learn-art art-observe" aria-hidden="true">
+                <span class="glass-label"
+                  ><i class="small-dot"></i> PASSIVE OBSERVATIONS</span
+                >
+                <div class="barcode"></div>
+              </div>
+              <div>
+                <span class="eyebrow">THE CONTEXT</span>
+                <h3>Indicators to investigate.</h3>
+                <p>
+                  Review missing headers and transport observations with
+                  context. Findings require manual verification.
+                </p>
+              </div>
+            </article>
+            <article class="learn-card" data-slide="2">
+              <div class="learn-art art-data" aria-hidden="true">
+                <span class="glass-label">PAGES / LINKS / FINDINGS</span>
+                <div class="data-lines">
+                  <i></i><i></i><i></i><i></i><i></i>
+                </div>
+              </div>
+              <div>
+                <span class="eyebrow">THE RECORD</span>
+                <h3>Your crawl, in your hands.</h3>
+                <p>
+                  Export the SQLite database once crawling stops. Stored data
+                  remains available between runs.
+                </p>
+              </div>
+            </article>
+          </div>
+        </div>
+        <div class="carousel-controls" hidden>
+          <button id="slide-prev" type="button" aria-label="Previous feature">
+            ←</button
+          ><button id="slide-next" type="button" aria-label="Next feature">
+            →
+          </button>
+          <p id="slide-status" aria-live="polite">1 of 3</p>
+        </div>
+      </section>
+    </main>
+    <footer class="footer-shell">
+      <div class="footer-field" aria-hidden="true"></div>
+      <div class="footer-card">
+        <a class="brand" href="#home">ScraperPro.</a>
+        <p>Every link has a story.<br />Follow yours.</p>
+        <div>
+          <a href="#workspace">Map a website ↗</a
+          ><a href="/docs" target="_blank" rel="noopener noreferrer"
+            >API reference ↗</a
+          ><a
+            href="https://github.com/BroCoder007/scraperPro"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Source on GitHub ↗</a
+          >
+        </div>
+        <span>Local-first website mapping / Built by Abhinav Raghavendra</span>
+      </div>
+    </footer>
+    <noscript
+      ><div class="noscript">
+        JavaScript is required to start crawls and load results. The
+        <a href="/docs">API reference</a> remains available.
+      </div></noscript
+    >
+  </body>
+</html>
