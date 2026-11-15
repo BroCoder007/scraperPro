@@ -6,3 +6,4 @@ scraped_data/
 *.log
 .env
 debug_screenshot.png
+work/
